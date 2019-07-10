@@ -12,10 +12,51 @@ extern uint16 ad_p[7][6];//一字电感   ad_p[i][0]用存放哨站以及中值滤波后的结果
 extern uint16 ad_v[3][6];//竖直电感   ad_v[i][0]用存放哨站以及中值滤波后的结果
 extern int PITx_Flag = 1;
 uint32 distance = 0;
+uint16 test_servo = SERVO_CENTER;
 void PIT0_IRQHandler(void){
   key_IRQHandler();     //定时扫描按键状态
   menu_update();      //菜单更新
+  Direction_Data_Update();
+  if(page_status == M_SUB11){    //第一个子菜单的子菜单
+    for(ADC_e i = ADP1; i <ADV1;i++){           //左侧放水平右侧放竖直
+      lcd_showuint8(0,i+1,ad_val[i][0]);
+    }
+    for(ADC_e i = ADV1;i < AD_MAX; i++){
+      lcd_showuint8(60,i-ADV1+1,ad_val[i][0]);
+    }
+  }
+  if(page_status == M_SUB12){
+    for(ADC_e i = ADP1; i <ADV1;i++){           //左侧放水平右侧放竖直
+      lcd_showuint8(0,i+1,L_Variance1(sensor[i]));
+    }
+    for(ADC_e i = ADV1;i < AD_MAX; i++){
+      lcd_showuint8(60,i-ADV1+1,L_Variance1(sensor[i]));
+    }
+  }
   
+  if(page_status == M_SUB13){
+    for(ADC_e i = ADP1; i <ADV1;i++){           //左侧放水平右侧放竖直
+      lcd_showuint8(0,i+1,sensor[i][0]);
+    }
+    for(ADC_e i = ADV1;i < AD_MAX; i++){
+      lcd_showuint8(60,i-ADV1+1,sensor[i][0]);
+    }
+  }
+  if(page_status == M_SUB21){    //第二个子菜单的子菜单
+    if(((~KEY_ALL)&(1<<KEY_L))&&(option_key_status!=KEY_L)){    //KEY_L增加       // 执行后关闭使能，避免其值快速变化
+       test_servo+=10;
+       ServoPWM(test_servo);
+       option_key_status = KEY_L;
+    }
+    else if(((~KEY_ALL)&(1<<KEY_R))&&(option_key_status!=KEY_R)){       //KEY_R减少       //同上
+       test_servo-=10;
+       ServoPWM(test_servo);
+       option_key_status = KEY_R;
+    }else if(!((~KEY_ALL)&(1<<KEY_L))&&!((~KEY_ALL)&(1<<KEY_R))&&!((~KEY_ALL)&(1<<KEY_U))&&!((~KEY_ALL)&(1<<KEY_D))){       //总的使能
+        option_key_status = KEY_MAX; //表示可以更改
+    }
+    lcd_showuint16(60,1,test_servo);
+  }
   //var[0]=key_get(KEY_A);//MotorPWM;
   //var[1]=Encode_Switch();//ad_p[0][3];//Bmq_Get();
   //SWJ_sendData(var,sizeof(var));
@@ -32,36 +73,28 @@ void PIT0_IRQHandler(void){
   /*printf("水平电感值：%d,%d,%d,%d,%d\n",sensor_p[1],sensor_p[2],sensor_p[0],sensor_p[3],sensor_p[4]);
   printf("垂直电感值：%d,%d,%d\n",sensor_v[1],sensor_v[0],sensor_v[2]);
   printf("差比和结果：%f\n",DirectionErr[0][0]);*/
-  My_adc_once(ADC_8bit);
   printf("水平电感值：%d,%d,%d,%d,%d,%d,%d\n",ad_val[0][3],ad_val[1][3],ad_val[2][3],ad_val[3][3],ad_val[4][3],ad_val[5][3],ad_val[6][3]);
   printf("垂直电感值：%d,%d,%d\n",ad_val[7][3],ad_val[8][3],ad_val[9][3]);
   //printf("水平电感值：%d,%d,%d,%d,%d,%d,%d\n",adc_once(AD_1_P,ADC_8bit),adc_once(AD_2_P,ADC_8bit),adc_once(AD_3_P,ADC_8bit),var[1]=adc_once(AD_R_P,ADC_8bit),adc_once(AD_4_P,ADC_8bit),adc_once(AD_5_P,ADC_8bit),adc_once(AD_6_P,ADC_8bit));
   //printf("垂直电感值：%d,%d,%d\n",adc_once(AD_1_V,AD C_8bit),adc_once(AD_R_V,ADC_8bit),adc_once(AD_2_V,ADC_8bit));
   //printf("PIT0 start\n");
-  lcd_showuint8(0,5,ad_val[3][3]);
-  lcd_showuint8(60,5,ad_val[8][3]);
-  lcd_changestyle(GREEN,WHITE);
-  lcd_showuint8(0,6,key_check(KEY_A));
-  lcd_showuint8(0,7,key_check(KEY_B));
-  lcd_changestyle(RED,WHITE);
-  lcd_showuint8(0,8,Encode_Switch());
-  lcd_showuint16(0,9,KEY_ALL);
-  lcd_showuint16(60,9,KEY_ALL_HOLD);
-  /*if(PITx_Flag){
-    ServoPWM(700);
-    PITx_Flag^=1;
-    printf("PWM1\n");
-  }else{
-    ServoPWM(200);
-    PITx_Flag^=1;
+  if(page_status == M_MAIN){    //主菜单
     
-    printf("PWM3\n");
-  }*/
+    lcd_showuint8(0,5,ad_val[3][3]);
+    lcd_showuint8(60,5,ad_val[8][3]);
+    lcd_changestyle(GREEN,WHITE);
+    lcd_showuint8(0,6,key_check(KEY_A));
+    lcd_showuint8(0,7,key_check(KEY_B));
+    lcd_changestyle(RED,WHITE);
+    lcd_showuint8(0,8,Encode_Switch());
+    lcd_showuint16(0,9,KEY_ALL);
+    lcd_showuint16(60,9,KEY_ALL_HOLD);
+  }
   PIT_Flag_Clear(PIT0);
 }
 void PIT1_IRQHandler(void){
   
-        //pit_time_start(PIT2);
+        /*//pit_time_start(PIT2);
         printf("进入超声波中断\n");
         gpio_set(CSB_Trig,1);
         DELAY_US(10);
@@ -79,8 +112,17 @@ void PIT1_IRQHandler(void){
         //T = time*1000/bus_clk_khz;
         //printf("采样计时时间为：%d us\n",T);
         pit_close(PIT2);
-        //pit_close(PIT3);
-  
+        //pit_close(PIT3);*/
+  if(PITx_Flag){
+    ServoPWM(1000);
+    PITx_Flag^=1;
+    printf("PWM1\n");
+  }else{
+    ServoPWM(300);
+    PITx_Flag^=1;
+    
+    printf("PWM3\n");
+  }
   PIT_Flag_Clear(PIT1);
 }
 void PORTA_IRQHandler(void){

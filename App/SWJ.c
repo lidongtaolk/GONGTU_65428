@@ -10,7 +10,7 @@ uint8 Encode_Switch_Value = 0;
 
 void SWJ_Init(void){
     key_init(KEY_MAX);  //普通管脚初始化
-    port_init_NoALT(PTA6,IRQ_FALLING);   //A6上升沿中断       中断使能在irq模块中完成
+    //port_init_NoALT(PTA6,IRQ_FALLING);   //A6上升沿中断       中断使能在irq模块中完成
     
     Beep_Init();
 }

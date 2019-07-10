@@ -24,7 +24,7 @@
 #define AD_3_P             ADC0_DP0//ADC1_DP0//ADC0_DM0
 #define AD_4_P             ADC0_DM1//ADC0_DM1
 #define AD_5_P             ADC0_DP1//ADC1_DM1
-#define AD_6_P             ADC1_SE5a
+#define AD_6_P             ADC1_SE5a  
 #define AD_1_V             ADC1_DP0
 #define AD_2_V             ADC1_SE4a//ADC1_DP1     //ADC1_DP1
 #define AD_R_P             ADC1_DM1//ADC1_DM0//ADC0_DP0     //一字参考电感

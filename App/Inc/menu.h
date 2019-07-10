@@ -12,9 +12,23 @@ typedef enum
 
 typedef enum
 {
-  MAIN,
-  SUB1,
-  SUB2,
+  M_MAIN,
+  
+  M_SUB1,
+  M_SUB2,
+  M_SUB3,
+  
+  M_SUB11,
+  M_SUB12,
+  M_SUB13,
+  
+  M_SUB21,
+  M_SUB22,
+  M_SUB23,
+  
+  M_SUB31,
+  M_SUB32,
+  M_SUB33,
   MENU_MAX,
 }MENU_e;
 

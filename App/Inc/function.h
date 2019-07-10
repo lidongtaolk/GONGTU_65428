@@ -24,6 +24,8 @@ extern int Final_Flag;     //状态压缩判据
 
 //绝对值
 double my_abs(double data);
-int L_Variance(void);   //计算工字电感的方差
+float my_sqrt(float number,int greater);
+float L_Variance1(uint16 *sensor);
+int L_Variance2(void);   //计算工字电感的方差
 
 #endif

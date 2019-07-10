@@ -20,7 +20,7 @@
 
 //下面是定义按键的时间，单位为 ： 10ms（中断时间）
 #define KEY_DOWN_TIME           1       //消抖确认按下时间
-#define KEY_HOLD_TIME           30      //长按hold确认时间，最多253，否则需要修改 keytime 的类型
+#define KEY_HOLD_TIME           20      //长按hold确认时间，最多253，否则需要修改 keytime 的类型
                                         //如果按键一直按下去，则每隔 KEY_HOLD_TIME - KEY_DOWN_TIME 时间会发送一个 KEY_HOLD 消息
 
 //定义按键消息FIFO大小

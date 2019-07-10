@@ -358,14 +358,33 @@ void lcd_showuint16(uint16 x,uint16 y,uint16 dat)
 	}
 }
 
+void lcd_showfloat(uint16 x,uint16 y,float dat){
+        uint16 dat2 = (uint16)(dat*1000);
+        uint8 a[6];
+	uint8 i;
 
+	a[0] = dat2/10000;
+	a[1] = dat2/1000%10;
+	a[2] = '.';
+        a[3] = dat2/100%10;
+	a[4] = dat2/10%10;
+	a[5] = dat2%10;
+	
+	i = 0;
+	while(i<6)
+	{
+                if(i == 2)lcd_showchar(x+(8*(i+1)),y*16,a[i]);
+		else lcd_showchar(x+(8*(i+1)),y*16,'0' + a[i]);
+		i++;
+	}
+}
 
 /********/
 void showimage(const unsigned char *p,int j,int k,int judge) 
 {
   	int i; 
 	unsigned char picH,picL;
-	if(judge!=0)dsp_single_colour(WHITE); //清屏  
+	if(judge)dsp_single_colour(WHITE); //清屏  
 	
 	Lcd_SetRegion(j,k,j+24,k+24);		//坐标设置
         for(i=0;i<(LCD_CAR_IMAGE_SIZE>>1);i++)

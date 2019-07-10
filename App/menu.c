@@ -5,15 +5,34 @@
 
 const uint8 *__TEAM_NAME__ = "GONGTU";
 
-MENU_e   page_status = MAIN;
-int option_key_status=0;
+MENU_e   page_status = M_MAIN;
+int option_key_status=0;                //过去的按键状态，用作关闭使能
 OPTION_e  old_option_status =1;         //旧的选项，用来确保刷新一次
 OPTION_e  option_status = 1;            //新的选项
 uint8 *(opt_name[MENU_MAX][OPT_SIZE]) = {
-                                          {"1.test","2.Servo","3.Motor"},        //主菜单
-                                          {"1.test","2.test","3.test"},
-                                          {"1.test","2.test","3.test"}};
+                                          {"1.adc","2.Servo","3.Motor"},        //主菜单
+                                          
+                                          {"1.value","2.L_V","3.sensor"},         //子菜单
+                                          {"1.pwm","2.test2","3.test2"},
+                                          {"1.test3","2.test3","3.test3"},
+                                          
+                                          {"","",""},    //子子菜单
+                                          {"","",""},    //子子菜单
+                                          {"","",""},    //子子菜单
+                                          
+                                          {"","",""},    //子子菜单
+                                          {"","",""},    //子子菜单
+                                          {"","",""},    //子子菜单
+                                          
+                                          {"","",""},    //子子菜单
+                                          {"","",""},    //子子菜单
+                                          {"","",""}    //子子菜单
+};
 
+/*
+*菜单初始化
+*用来更新主菜单和子菜单
+*/
 void menu_init(){
   menu_showtitle();     //标题
   for(int i = 0;i<3;i++){
@@ -21,33 +40,60 @@ void menu_init(){
   }
 }
 
+/*
+*菜单刷新
+*@brief 若是关键KEY都弹起，则不操作（但是仍要开总使能）
+*/
 void menu_update(){
   if(option_key_status == -1)return;
-  old_option_status = option_status;
-  if(((~KEY_ALL)&(1<<KEY_U))&&(option_key_status != KEY_U)){
+  if(((~KEY_ALL)&(1<<KEY_OK))&&(page_status == M_MAIN)){        //首先确认是否要更改PAGE
+    page_status = option_status+1;
+    menu_init();        //更改后刷新页面
+    return;
+  }
+  if(((~KEY_ALL)&(1<<KEY_OK))&&(page_status != M_MAIN)){        //子子菜单
+    page_status = page_status*3+option_status+1;
+    menu_init();        //更改后刷新页面
+    return;
+  }
+  if(((~KEY_ALL)&(1<<KEY_B))&&(page_status != M_MAIN)){        //回退
+    page_status = (page_status-1)/3;
+    menu_init();        //更改后刷新页面
+    return;
+  }
+  old_option_status = option_status;                            //其次再更改选项选中状态
+  if(((~KEY_ALL)&(1<<KEY_U))&&(option_key_status != KEY_U)){    //向上选中  // 执行后关闭使能，避免其值快速变化
     if(option_status == 0)option_status = OPT_SIZE-1;
     else option_status --;
     option_key_status = KEY_U;
-  }else if(((~KEY_ALL)&(1<<KEY_D))&&(option_key_status != KEY_D)){
+  }else if(((~KEY_ALL)&(1<<KEY_D))&&(option_key_status != KEY_D)){      //向下选中
     if(option_status == OPT_SIZE-1)option_status = 0;
     else option_status ++;
     option_key_status = KEY_D;
-  }else if(!((~KEY_ALL)&(1<<KEY_D))&&!((~KEY_ALL)&(1<<KEY_U))){
+  }else if(!((~KEY_ALL)&(1<<KEY_D))&&!((~KEY_ALL)&(1<<KEY_U))&&!((~KEY_ALL)&(1<<KEY_L))&&!((~KEY_ALL)&(1<<KEY_R))){         //总使能
     option_key_status = KEY_MAX; //表示可以更改
   }
   if(old_option_status!=option_status){ //直到有所更改才刷新
-    lcd_showuint8(0,4,option_status);
-    menu_showoption(opt_name[page_status][old_option_status],0,old_option_status+1,RED,WHITE);
-    menu_showoption(opt_name[page_status][option_status],0,option_status+1,RED,BLUE);
+    lcd_showuint8(0,4,option_status);   //显示选项状态
+    menu_showoption(opt_name[page_status][old_option_status],0,old_option_status+1,RED,WHITE);  //将原来的选中状态复位
+    menu_showoption(opt_name[page_status][option_status],0,option_status+1,RED,BLUE);   //新的选中状态置位
   }
 }
 
+/*
+*标题显示
+*
+*/
 void menu_showtitle(){
     lcd_changestyle(BLUE,GREEN);
     showimage(gImage_car,0,0,1);
     lcd_showstr(38,0,__TEAM_NAME__);
     showimage(gImage_car,100,0,0);
 }
+/*
+*选项显示
+*@brief 可更改字体和当前行的背景
+*/
 void menu_showoption(uint8 *c,uint16 x,uint16 y,uint16 p,uint16 b){
         lcd_changestyle(p,b);   //设置字体和背景
         uint8 i,j;

@@ -6,13 +6,12 @@
 ******************************************************/
 #ifndef __SERVO_H__
 #define __SERVO_H__
-
-extern int Servo_Center; //´ýµ÷Õû
-extern int Servo_MAX;
-extern int Servo_MIN;
+#define SERVO_CENTER    750
+#define SERVO_MAX       1250
+#define SERVO_MIN       250
 
 extern void Servo_Init();
-extern void ServoPWM(int PWM);
+extern void ServoPWM(uint32 PWM);
 extern void Servo_STOP();
 extern void Servo_MAX_Change();
 
