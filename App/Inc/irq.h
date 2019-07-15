@@ -11,6 +11,6 @@
 void PIT0_IRQHandler(void);
 void PIT1_IRQHandler(void);
 void PORTA_IRQHandler(void);
-
+void PORTB_IRQHandler(void);
 
 #endif

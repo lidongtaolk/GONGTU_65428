@@ -8,7 +8,7 @@
 
 void Servo_Init(){
     //Servo_Center = 450;//74; //舵机摆到正中间
-    ftm_pwm_init(FTM0,Servo_ftm0_pwm,50,SERVO_CENTER);
+    ftm_pwm_init(FTM0,Servo_ftm0_pwm,200,SERVO_CENTER);
 } 
 
 void ServoPWM(uint32 PWM){

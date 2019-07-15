@@ -58,6 +58,12 @@
 //----------¶æ»ú-------------------------------------
 #define Servo_ftm0_pwm                    FTM_CH2
 
+//---------I2C--------------------------------------
+#define BMX_SCL_PIN                 PTC10
+#define BMX_SDA_PIN                 PTC11
+#define JG_SCL_PIN                  PTD8
+#define JG_SDA_PIN                  PTD9
+
 //---------¸É»É¹Ü------------------------------------
 #define Reed_port                  PTA16
 

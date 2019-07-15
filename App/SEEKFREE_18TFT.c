@@ -358,22 +358,38 @@ void lcd_showuint16(uint16 x,uint16 y,uint16 dat)
 	}
 }
 
-void lcd_showfloat(uint16 x,uint16 y,float dat){
-        uint16 dat2 = (uint16)(dat*1000);
-        uint8 a[6];
+/*
+*lcd显示浮点型数据 
+*
+*@brief 由于直接传浮点数据时会出错，所以先将数据*1000并转换为int32后传入
+*/
+
+void lcd_showfloat(uint16 x,uint16 y,int32 data){       
+        //printf("%f\n",data);
+        float dat = (data)/1000.0;
+        if((*(long*)&dat)&(1<<31))
+	{
+		lcd_showchar(x,y*16,'-');
+		dat = -dat;
+	}
+	else	lcd_showchar(x,y*16,' ');
+        
+        uint32 dat2 = (uint32)(dat*1000);
+        uint8 a[7];
 	uint8 i;
 
-	a[0] = dat2/10000;
-	a[1] = dat2/1000%10;
-	a[2] = '.';
-        a[3] = dat2/100%10;
-	a[4] = dat2/10%10;
-	a[5] = dat2%10;
-	
+	a[0] = dat2/100000;
+	a[1] = dat2/10000%10;
+        a[2] = dat2/1000%10;
+	a[3] = '.';
+        a[4] = dat2/100%10;
+	a[5] = dat2/10%10;
+	a[6] = dat2%10;
+        
 	i = 0;
-	while(i<6)
+	while(i<7)
 	{
-                if(i == 2)lcd_showchar(x+(8*(i+1)),y*16,a[i]);
+                if(i == 3)lcd_showchar(x+(8*(i+1)),y*16,a[i]);
 		else lcd_showchar(x+(8*(i+1)),y*16,'0' + a[i]);
 		i++;
 	}

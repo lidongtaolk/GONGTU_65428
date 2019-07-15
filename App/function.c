@@ -22,7 +22,9 @@ int zhizuo_Count = 0;
 int Final_Flag = 0;     //状态压缩判据
 //Final_Flag = 0;     //状态压缩判据
 
-double my_abs(double data){
+SAIDAO_e SAIDAO_FLAG = COMMON;
+
+float my_abs(float data){
     return(data>0?data:-1*data);
 }
 
@@ -37,6 +39,44 @@ float my_sqrt(float number,int greater){
     return y;
 }
 
+float my_ave1(){                //除八字外其他差比和的均值
+    return (DirectionErr[0][0]+DirectionErr[2][0]+DirectionErr[3][0])/3;
+}
+
+float my_ave2(){                //八字差比和的均值
+  float ret = 0;
+  for(uint8 i = 0;i<SENSOR_SIZE;i++){
+    ret+=DirectionErr[1][i];
+    //printf("%f\n",DirectionErr[1][i]);
+  }
+  ret/=SENSOR_SIZE;
+  printf("Err:%f\n",ret);
+  return ret;
+}
+
+float my_ave3(){                //八字电感adc的均值
+  float ret = 0;
+  for(uint8 i = 0;i<SENSOR_SIZE;i++){
+    ret+=sensor[2][i]+sensor[5][i];
+  }
+  ret/=(SENSOR_SIZE*2);
+  printf("sensor:%f\n",ret);
+  return ret;
+}
+float my_min(float *a){
+  float ret = *(a+0);
+  for(int i = 1;i<SENSOR_SIZE;i++){
+    if(ret > (*(a+i)) )ret = *(a+i);
+  }
+  return ret;
+}
+float my_max(float *a){
+  float ret = *(a+0);
+  for(int i = 1;i<SENSOR_SIZE;i++){
+    if(ret < (*(a+i)) )ret = *(a+i);
+  }
+  return ret;
+}
 float L_Variance1(uint16 *sensor){        //计算单个电感历史的方差
   float ave = 0;
   float ret = 0;

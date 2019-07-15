@@ -22,8 +22,21 @@ extern int zhizuo_Count;
 
 extern int Final_Flag;     //状态压缩判据
 
+typedef enum{
+  COMMON,       //初始不做特殊判断
+  CZ,           //长直
+  HD,           //环岛
+  ZJ,           //直角
+  SZ,           //十字
+  MISS,         //丢线
+  STOP,           //停车
+  SAIDAO_MAX,  //状态个数  
+}SAIDAO_e;
+
+extern SAIDAO_e SAIDAO_FLAG;
+
 //绝对值
-double my_abs(double data);
+float my_abs(float data);
 float my_sqrt(float number,int greater);
 float L_Variance1(uint16 *sensor);
 int L_Variance2(void);   //计算工字电感的方差

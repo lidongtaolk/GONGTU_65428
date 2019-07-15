@@ -13,7 +13,7 @@ int Stop_Count = 0;
 int GetSpeed[3]={0};
 int Speed_Error[3]={0};
 
-double Speed_Kp = 0,Speed_Ki = 0,Speed_Kd = 0;              //速度pid系数
+double Speed_Kp = 0.2,Speed_Ki = 0.02,Speed_Kd = 0;              //速度pid系数
 
 
 void Motor_Init(void){
@@ -43,7 +43,7 @@ void Speed_StopCar(void){
       Stop_Count++;
       if(Stop_Count>10){
           Stop_Flag = 2;        //终点停车
-          Stop_Count = 11;
+          Stop_Count = 11;  
       }
       MotorPWM = 0;
       PWM_Out();
@@ -78,8 +78,8 @@ void Speed_Control(){
     //一般pid算法
     MotorPWM+= (Speed_Kp*Speed_Error[0]+Speed_Ki*(Speed_Error[0]+Speed_Error[1]+Speed_Error[2])+Speed_Kd*(Speed_Error[1]-Speed_Error[0]))*0.2;
     //double d = (Speed_Kp*Speed_Error[0]+Speed_Ki*(Speed_Error[0]+Speed_Error[1]+Speed_Error[2])+Speed_Kd*(Speed_Error[1]-Speed_Error[0]))*0.2;
-    if(((Speed_Kp*Speed_Error[0]+Speed_Ki*(Speed_Error[0]+Speed_Error[1]+Speed_Error[2])+Speed_Kd*(Speed_Error[1]-Speed_Error[0]))*0.2)<1&&((Speed_Kp*Speed_Error[0]+Speed_Ki*(Speed_Error[0]+Speed_Error[1]+Speed_Error[2])+Speed_Kd*(Speed_Error[1]-Speed_Error[0]))*0.2)>0)MotorPWM+=1;
-    else if(((Speed_Kp*Speed_Error[0]+Speed_Ki*(Speed_Error[0]+Speed_Error[1]+Speed_Error[2])+Speed_Kd*(Speed_Error[1]-Speed_Error[0]))*0.2)>-1&&((Speed_Kp*Speed_Error[0]+Speed_Ki*(Speed_Error[0]+Speed_Error[1]+Speed_Error[2])+Speed_Kd*(Speed_Error[1]-Speed_Error[0]))*0.2)<0)MotorPWM-=1;
+   // if(((Speed_Kp*Speed_Error[0]+Speed_Ki*(Speed_Error[0]+Speed_Error[1]+Speed_Error[2])+Speed_Kd*(Speed_Error[1]-Speed_Error[0]))*0.2)<1&&((Speed_Kp*Speed_Error[0]+Speed_Ki*(Speed_Error[0]+Speed_Error[1]+Speed_Error[2])+Speed_Kd*(Speed_Error[1]-Speed_Error[0]))*0.2)>0)MotorPWM+=1;
+    //else if(((Speed_Kp*Speed_Error[0]+Speed_Ki*(Speed_Error[0]+Speed_Error[1]+Speed_Error[2])+Speed_Kd*(Speed_Error[1]-Speed_Error[0]))*0.2)>-1&&((Speed_Kp*Speed_Error[0]+Speed_Ki*(Speed_Error[0]+Speed_Error[1]+Speed_Error[2])+Speed_Kd*(Speed_Error[1]-Speed_Error[0]))*0.2)<0)MotorPWM-=1;
     //else MotorPWM+=(Speed_Kp*Speed_Error[0]+Speed_Ki*(Speed_Error[0]+Speed_Error[1]+Speed_Error[2])+Speed_Kd*(Speed_Error[1]-Speed_Error[0]))*0.2;
     if(MotorPWM<23)MotorPWM = 23;
     else if(MotorPWM>100)MotorPWM=100;

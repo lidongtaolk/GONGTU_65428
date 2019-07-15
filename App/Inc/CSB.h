@@ -6,6 +6,8 @@
 ******************************************************/
 #ifndef __CSB_H__
 #define __CSB_H__
+#define CSB_TRIG_TIME   10
+
 
 extern uint16 CSB_Time;
 

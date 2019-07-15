@@ -10,23 +10,57 @@ int option_key_status=0;                //过去的按键状态，用作关闭使能
 OPTION_e  old_option_status =1;         //旧的选项，用来确保刷新一次
 OPTION_e  option_status = 1;            //新的选项
 uint8 *(opt_name[MENU_MAX][OPT_SIZE]) = {
-                                          {"1.adc","2.Servo","3.Motor"},        //主菜单
+                                          {"1.adc","2.Servo","3.Motor","4.I2C","5.CSB",""},        //主菜单
                                           
-                                          {"1.value","2.L_V","3.sensor"},         //子菜单
-                                          {"1.pwm","2.test2","3.test2"},
-                                          {"1.test3","2.test3","3.test3"},
+                                          {"1.value","2.L_V","3.sensor","4.","",""},         //子菜单
+                                          {"1.pwm","2.ERROR","3.START","4.DataUpdate","5.HDcanshu",""},
+                                          {"1.PWM","2.START","3.test3","4.","",""},
+                                          {"1.START","2.STOP","","","",""},
+                                          {"1.START","2.STOP","","","",""},
+                                          {"1.START","2.STOP","","","",""},
                                           
-                                          {"","",""},    //子子菜单
-                                          {"","",""},    //子子菜单
-                                          {"","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                         
                                           
-                                          {"","",""},    //子子菜单
-                                          {"","",""},    //子子菜单
-                                          {"","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
                                           
-                                          {"","",""},    //子子菜单
-                                          {"","",""},    //子子菜单
-                                          {"","",""}    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
+                                          {"","","","","",""},    //子子菜单
 };
 
 /*
@@ -35,7 +69,7 @@ uint8 *(opt_name[MENU_MAX][OPT_SIZE]) = {
 */
 void menu_init(){
   menu_showtitle();     //标题
-  for(int i = 0;i<3;i++){
+  for(OPTION_e i = OPT_0;i<OPT_SIZE;i++){
     menu_showoption(opt_name[page_status][i],0,i+1,RED,WHITE);  //设置每页的选项，包括字体和背景（选中时的蓝条）
   }
 }
@@ -46,18 +80,21 @@ void menu_init(){
 */
 void menu_update(){
   if(option_key_status == -1)return;
-  if(((~KEY_ALL)&(1<<KEY_OK))&&(page_status == M_MAIN)){        //首先确认是否要更改PAGE
+  /*if(((~KEY_ALL)&(1<<KEY_OK))&&(page_status == M_MAIN)&&(option_key_status != KEY_OK)){        //首先确认是否要更改PAGE
     page_status = option_status+1;
     menu_init();        //更改后刷新页面
     return;
-  }
-  if(((~KEY_ALL)&(1<<KEY_OK))&&(page_status != M_MAIN)){        //子子菜单
-    page_status = page_status*3+option_status+1;
-    menu_init();        //更改后刷新页面
+  }*/
+  if(((~KEY_ALL)&(1<<KEY_OK))&&(option_key_status != KEY_OK)){        //首先确认是否要更改PAGE //子菜单级联和子子菜单级联使用一个算法
+    uint32 tem = page_status*6+option_status+1;
+    if(tem<MENU_MAX){
+      page_status = tem;
+      menu_init();        //更改后刷新页面
+    }
     return;
   }
-  if(((~KEY_ALL)&(1<<KEY_B))&&(page_status != M_MAIN)){        //回退
-    page_status = (page_status-1)/3;
+  if(((~KEY_ALL)&(1<<KEY_B))&&(page_status != M_MAIN)&&(option_key_status != KEY_OK)){        //回退
+    page_status = (page_status-1)/6;
     menu_init();        //更改后刷新页面
     return;
   }
@@ -70,11 +107,11 @@ void menu_update(){
     if(option_status == OPT_SIZE-1)option_status = 0;
     else option_status ++;
     option_key_status = KEY_D;
-  }else if(!((~KEY_ALL)&(1<<KEY_D))&&!((~KEY_ALL)&(1<<KEY_U))&&!((~KEY_ALL)&(1<<KEY_L))&&!((~KEY_ALL)&(1<<KEY_R))){         //总使能
+  }else if(!((~KEY_ALL)&(1<<KEY_D))&&!((~KEY_ALL)&(1<<KEY_U))&&!((~KEY_ALL)&(1<<KEY_L))&&!((~KEY_ALL)&(1<<KEY_R))&&!((~KEY_ALL)&(1<<KEY_OK))){         //总使能
     option_key_status = KEY_MAX; //表示可以更改
   }
   if(old_option_status!=option_status){ //直到有所更改才刷新
-    lcd_showuint8(0,4,option_status);   //显示选项状态
+    lcd_showuint8(0,OPT_SIZE+1,option_status);   //显示选项状态
     menu_showoption(opt_name[page_status][old_option_status],0,old_option_status+1,RED,WHITE);  //将原来的选中状态复位
     menu_showoption(opt_name[page_status][option_status],0,option_status+1,RED,BLUE);   //新的选中状态置位
   }
