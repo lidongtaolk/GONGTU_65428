@@ -14,7 +14,14 @@ void my_flash_reset1(){         //Direction控制参数reset
   ASSERT(flash_write(SECTOR_NUM,DDHD*8,reset[DDHD])==1);
 }
 
-void my_flash_write1(){         //Direction控制参==1数烧写
+void my_flash_reset2(){
+  flash_erase_sector(SECTOR_NUM);
+  ASSERT(flash_write(SECTOR_NUM,SP*8,reset[SP])==1);
+  ASSERT(flash_write(SECTOR_NUM,SD*8,reset[SD])==1);
+  ASSERT(flash_write(SECTOR_NUM,SI*8,reset[SI])==1);
+}
+
+void my_flash_write1(){         //Direction控制参数烧写
   flash_erase_sector(SECTOR_NUM);
   ASSERT(flash_write(SECTOR_NUM,DP*8,(uint64)Direction_P*1000));
   ASSERT(flash_write(SECTOR_NUM,DD*8,(uint64)Direction_D*1000));
@@ -24,6 +31,13 @@ void my_flash_write1(){         //Direction控制参==1数烧写
 
   ASSERT(flash_write(SECTOR_NUM,DPHD*8,(uint64)Direction_PHD*1000));
   ASSERT(flash_write(SECTOR_NUM,DDHD*8,(uint64)Direction_DHD*1000));
+}
+
+void my_flash_write2(){         //Direction控制参==1数烧写
+  flash_erase_sector(SECTOR_NUM);
+  ASSERT(flash_write(SECTOR_NUM,SP*8,(uint64)Speed_Kp*1000));
+  ASSERT(flash_write(SECTOR_NUM,SD*8,(uint64)Speed_Kd*1000));
+  ASSERT(flash_write(SECTOR_NUM,SI*8,(uint64)Speed_Ki*1000));
 }
 
 void my_flash_read1(){           //Direction控制参数读取
@@ -36,4 +50,11 @@ void my_flash_read1(){           //Direction控制参数读取
   
   Direction_PHD = (float)(flash_read(SECTOR_NUM,DPHD*8,uint64))/1000.0;
   Direction_DHD = (float)(flash_read(SECTOR_NUM,DDHD*8,uint64))/1000.0;
+}
+
+void my_flash_read2(){           //Direction控制参数读取
+ 
+  Speed_Kp = (float)(flash_read(SECTOR_NUM,SP*8,uint64))/1000.0;
+  Speed_Kd = (float)(flash_read(SECTOR_NUM,SD*8,uint64))/1000.0;
+  Speed_Ki = (float)(flash_read(SECTOR_NUM,SI*8,uint64))/1000.0;
 }

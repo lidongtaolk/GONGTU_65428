@@ -34,6 +34,8 @@
 //------------³¬Éù²¨--------------------------------
 #define CSB_Trig           PTB9
 #define CSB_Echo           PTB8
+#define CSB_Trig2          PTC11
+#define CSB_Echo2          PTC10
 #define CSB_pit            PIT1
 
 
@@ -59,8 +61,8 @@
 #define Servo_ftm0_pwm                    FTM_CH2
 
 //---------I2C--------------------------------------
-#define BMX_SCL_PIN                 PTC10
-#define BMX_SDA_PIN                 PTC11
+#define BMX_SCL_PIN                 PTD8
+#define BMX_SDA_PIN                 PTD9
 #define JG_SCL_PIN                  PTD8
 #define JG_SDA_PIN                  PTD9
 

@@ -65,68 +65,111 @@ void Direction_Data_Update(void){
 *当误差小于0时,车向左偏,舵机需要向右打方向
 *当误差大于0时,车向右偏,舵机需要向左打方向
 */
-void Direction_Control(void){
+void Direction_Control2(void){
     /****停车保护****/
     /*if(sensor[ADPR][0]<100)lcd_showuint8(0,9,101);
     else if(sensor[ADPR][0]>=100)lcd_showuint8(0,9,0);
     if(DirectionErr[2][0]<40)lcd_showuint8(60,9,202);
     else if(DirectionErr[2][0]>40)lcd_showuint8(60,9,0);*/
-      if((sensor[ADPR][0]<40&&DirectionErr[2][0]<40)&&sensor[ADVR][0]<20){ //计数使结果更精确 //一字差比和为0的时候若中心电感值极小则为丢线   sensor[ADPR][0]<100&&DirectionErr[2][0]<40
+    if((sensor[ADPR][0]<40&&my_abs(DirectionErr[2][0])<40)&&sensor[ADVR][0]<20){ //计数使结果更精确 //一字差比和为0的时候若中心电感值极小则为丢线   sensor[ADPR][0]<100&&DirectionErr[2][0]<40
         Stop_Count++;
-        if(Stop_Count>=7){
-            Stop_Flag = 1; //停车
-            SAIDAO_FLAG = STOP;
+        if(SAIDAO_FLAG == ZJ){
+          Stop_Count = 0;
         }
-        lcd_showuint8(30,9,0);
+        else{
+           if(Stop_Count>=7){
+              Stop_Flag = 1; //停车
+              SAIDAO_FLAG = STOP;
+            }
+        }
+        lcd_showuint8(30,9,9);
     }
     else{
-        
-        SAIDAO_FLAG = SAIDAO_MAX;               //开头刷新，后面判断时若不更新判断则维持上一次的pwm 
+        if(HD_HOLD!=0)SAIDAO_FLAG = HD;         //若是HD关闭总使能则锁死为HD
+        else SAIDAO_FLAG = SAIDAO_MAX;               //开头刷新，后面判断时若不更新判断则维持上一次的pwm 
         //lcd_showuint8(30,9,22);
         Stop_Count = 0;
     }
-    if(SAIDAO_FLAG != STOP){
+    /***十字>环岛>直角**/
+    if(SAIDAO_FLAG != STOP&&HD_HOLD == 0){    //关闭总使能  STOP   进环岛时
         /***赛道判断**/
-      if((sensor[ADP2][0]>200||sensor[ADP5][0]>200))     //判环岛
+       if(sensor[ADPR][0]<40&&DirectionErr[2][0]<40&&sensor[ADVR][0]<20){   //MISS
+          SAIDAO_FLAG = MISS;
+          //Stop_Count = 0;       //Stop标志清零
+       }else if(sensor[ADV1][0]>60&&sensor[ADV2][0]>60){                //十字
+          SAIDAO_FLAG = SZ;
+          lcd_showuint8(30,9,44);
+       }else if(((sensor[ADP2][0]>=120&&sensor[ADP5][0]>=120))&&(sensor[ADPR][0]>=240))     //判环岛 //加入参考电感判环                      //sensor[ADP2][0]>=240&&sensor[ADP5][0]>=160)||(sensor[ADP5][0]>=240&&sensor[ADP2][0]>=160)
       {
           SAIDAO_FLAG = HD;
-          if(HD_HOLD!=0){}//不处理
+          if(HD_FLAG == 0){     //只处理一次，后面由HD_HOLD关闭使能
+            //HD_FLAG = 2;         //入环信号  信号在common处重置 但是在进环岛的情况下也有可能被清
+            if(sensor[ADV1][0]>sensor[ADV2][0]){
+              HD_HOLD = 1;
+              lcd_showuint8(30,9,12);
+            }
+            else if(sensor[ADV1][0]<sensor[ADV2][0]){
+              HD_HOLD = -1;
+              lcd_showuint8(30,9,22);
+            }
+            else if(sensor[ADP2][0]>sensor[ADP5][0]){
+              HD_HOLD = 1;
+              lcd_showuint8(30,9,12);
+            }
+            else if(sensor[ADP2][0]<sensor[ADP5][0]){
+              HD_HOLD = -1;
+              lcd_showuint8(30,9,22);
+            }
+            else{
+              //HD_FLAG --;
+              SAIDAO_FLAG = COMMON;      //若竖直电感无反应则水平循迹
+              lcd_showuint8(30,9,42);
+            }
+          }else{        //出环不处理
+            SAIDAO_FLAG = COMMON;
+            lcd_showuint8(30,9,32);
+          }
+          /*if(HD_HOLD!=0){}//不处理
           else if(sensor[ADP2][0]){
               HD_HOLD = 10;
           }
           else if(sensor[ADP5][0]){
               HD_HOLD = -10;
-          }
-          lcd_showuint8(30,9,22);
-       }else if(((sensor[ADV1][0]>40&&sensor[ADV2][0]<20)||(sensor[ADV1][0]<20&&sensor[ADV2][0]>40))){     //直角
+          }*/
+       }else if(((sensor[ADV1][0]>30&&sensor[ADV2][0]<20)||(sensor[ADV1][0]<20&&sensor[ADV2][0]>30))){     //直角
           SAIDAO_FLAG = ZJ;
-          if(sensor[ADV1][0]>40)ZJ_HOLD = 1;
-          else if(sensor[ADV2][0]>40)ZJ_HOLD = -1;
+          if(sensor[ADV1][0]>30)ZJ_HOLD = 1;
+          else if(sensor[ADV2][0]>30)ZJ_HOLD = -1;
           lcd_showuint8(30,9,33);
-       }else if(sensor[ADV1][0]>60&&sensor[ADV2][0]>60){                //十字
-          SAIDAO_FLAG = SZ;
-          lcd_showuint8(30,9,44);
-       }else if(sensor[ADPR][0]<40&&DirectionErr[2][0]<40&&sensor[ADVR][0]<20){   //MISS
-          SAIDAO_FLAG = MISS;
-          //Stop_Count = 0;       //Stop标志清零
        }else if(sensor[ADV1][0]<60&&sensor[ADV2][0]<60&&sensor[ADPR][0]>100&&(sensor[ADP3][0]>20||sensor[ADP4][0]>20)){
-          if(HD_HOLD!=0)SAIDAO_FLAG = HD;
           //if(SAIDAO_FLAG ==ZJ)SAIDAO_FLAG = HD;
-          else if(SAIDAO_FLAG ==ZJ)SAIDAO_FLAG = ZJ;         //等直角处理自己释放或时除直角外其他状态更新
+          if(SAIDAO_FLAG ==ZJ)SAIDAO_FLAG = ZJ;         //等直角处理自己释放或时除直角外其他状态更新
           else{
+            //if((sensor[ADP2][1]>=240||sensor[ADP5][1]>=160)&&HD_FLAG == 1){        //当最终出环岛的时候，重置入环信号
+            //    HD_FLAG = 0;
+            //}
             SAIDAO_FLAG = COMMON;
-            HD_HOLD = 0;
             ZJ_HOLD = 0;
           }
           lcd_showuint8(30,9,0);
        }
     }
     /**************************************************/
-    //舵机打脚输出
+     //舵机打脚输出
     Servo_PWM_old = Servo_PWM_now;
     if(SAIDAO_FLAG == STOP){
+      MotorPWM = 0;
+      PWM_Out();
       lcd_showuint8(0,9,101);
       Servo_PWM_now = Servo_PWM_old;
+    }
+    else if(SAIDAO_FLAG == SAIDAO_MAX){
+      if( Servo_PWM_old>SERVO_CENTER){
+           Servo_PWM_now = SERVO_MAX;
+      }
+      else if( Servo_PWM_old<SERVO_CENTER){
+           Servo_PWM_now = SERVO_MIN;
+      }
     }
     else if(SAIDAO_FLAG == COMMON){
       //float servo_pwm_delta = 0;
@@ -136,7 +179,7 @@ void Direction_Control(void){
       //Servo_PWM_now = SERVO_CENTER - Direction_P*DirectionErr[2][0];
     }
     else if(SAIDAO_FLAG == HD){
-      if(HD_HOLD != 0){
+      /*if(HD_HOLD != 0){
         //Servo_PWM_now = SERVO_CENTER - Direction_P*DirectionErr[2][0] - (DirectionErr[2][0]-DirectionErr[2][1])*Direction_D-(sensor[ADP2][0]-sensor[ADP2][1])*Direction_D;
         if(HD_HOLD>0){
           Servo_PWM_now = SERVO_CENTER - Direction_PHD*DirectionErr[1][0] - (DirectionErr[1][0]-DirectionErr[1][1])*Direction_DHD;
@@ -145,6 +188,18 @@ void Direction_Control(void){
           Servo_PWM_now = SERVO_CENTER - Direction_PHD*2*DirectionErr[1][0] - (DirectionErr[1][0]-DirectionErr[1][1])*Direction_DHD*2+500; //右转进环比较困难
           HD_HOLD++;
         }
+      }*/
+      if(sensor[ADP2][0]>=200||sensor[ADP5][0]>=140){//观察是否判为HD//if(sensor[ADVR][0]>10){      //竖直电感入环
+        if(HD_HOLD>0){
+            //DirectionErr[1][0]=(mysqrt((float)(sensor[ADVR][0]),0)-my_sqrt((float)(sensor[ADV1][0]),0))/(sensor[ADVR][0] + sensor[ADV1][0]) * 1000;  //竖直减左一
+            Servo_PWM_now = 6100 - Direction_PHD*DirectionErr[2][0] - (DirectionErr[2][0] - DirectionErr[2][1])*Direction_DHD;
+        }
+        else if(HD_HOLD<0){
+            //DirectionErr[1][0]=(my_sqrt((float)(sensor[ADV2][0]),0)-my_sqrt((float)(sensor[ADVR][0]),0))/(sensor[ADV2][0] + sensor[ADVR][0]) * 1000;    //竖直减左二 
+            Servo_PWM_now = SERVO_MAX - Direction_PHD*DirectionErr[2][0] - (DirectionErr[2][0] - DirectionErr[2][1])*Direction_DHD;
+        }
+      }else{
+        HD_HOLD = 0 ;//清HD关闭总使能标志
       }
     
     }
@@ -157,12 +212,19 @@ void Direction_Control(void){
         if(HD_HOLD > 0)Servo_PWM_now = SERVO_MIN;
         else Servo_PWM_now = SERVO_MAX;
       }
-      else Servo_PWM_now = Servo_PWM_old;
+      else{
+        if( Servo_PWM_old>SERVO_CENTER){
+           Servo_PWM_now = SERVO_MAX;
+        }
+        else if( Servo_PWM_old<SERVO_CENTER){
+           Servo_PWM_now = SERVO_MIN;
+        }
+      }
     }
     else if(SAIDAO_FLAG == ZJ){
-      //if(ZJ_HOLD == -1)Servo_PWM_now = SERVO_MAX;
-      //if(ZJ_HOLD == 1)Servo_PWM_now = SERVO_MIN;
-       Servo_PWM_now = SERVO_CENTER - Direction_PZJ*DirectionErr[3][0] - (DirectionErr[3][0]-DirectionErr[3][1])*Direction_DZJ;
+      if(ZJ_HOLD == -1)Servo_PWM_now = SERVO_MAX;//- Direction_PZJ*DirectionErr[3][0] - (DirectionErr[3][0]-DirectionErr[3][1])*Direction_DZJ;
+      if(ZJ_HOLD == 1)Servo_PWM_now = SERVO_MIN;//- Direction_PZJ*DirectionErr[3][0] - (DirectionErr[3][0]-DirectionErr[3][1])*Direction_DZJ;
+       //Servo_PWM_now = SERVO_CENTER - Direction_PZJ*DirectionErr[3][0] - (DirectionErr[3][0]-DirectionErr[3][1])*Direction_DZJ;
       //if(DirectionErr[2][0]>60||DirectionErr[2][0]<-60)ZJ_HOLD = 0;
       //if(sensor[ADPR][0]>200&& )ZJ_HOLD = 0;
       /*if(my_min(DirectionErr[2])>50){
@@ -177,8 +239,155 @@ void Direction_Control(void){
     Setted_Speed = 30;
     ServoPWM(Servo_PWM_now);
 }
+/****无lcd显示*****/
+void Direction_Control(void){
+    /****停车保护****/
+    if((sensor[ADPR][0]<40&&my_abs(DirectionErr[2][0])<40)&&sensor[ADVR][0]<20){ //计数使结果更精确 //一字差比和为0的时候若中心电感值极小则为丢线   sensor[ADPR][0]<100&&DirectionErr[2][0]<40
+        Stop_Count++;
+        if(SAIDAO_FLAG == ZJ){
+          Stop_Count = 0;
+        }
+        else{
+          if(Stop_Count>=7){
+            Stop_Flag = 1; //停车
+            SAIDAO_FLAG = STOP;
+          }
+        }
+        //lcd_showuint8(30,9,9);
+    }
+    else{
+        if(HD_HOLD!=0)SAIDAO_FLAG = HD;         //若是HD关闭总使能则锁死为HD
+        else SAIDAO_FLAG = SAIDAO_MAX;               //开头刷新，后面判断时若不更新判断则维持上一次的pwm 
+        //lcd_showuint8(30,9,22);
+        Stop_Count = 0;
+    }
+    /***十字>环岛>直角**/
+    if(SAIDAO_FLAG != STOP&&HD_HOLD == 0){    //关闭总使能  STOP   进环岛时
+        /***赛道判断**/
+       if(sensor[ADPR][0]<40&&DirectionErr[2][0]<40&&sensor[ADVR][0]<20){   //MISS
+          SAIDAO_FLAG = MISS;
+          //Stop_Count = 0;       //Stop标志清零
+       }else if(sensor[ADV1][0]>60&&sensor[ADV2][0]>60){                //十字
+          SAIDAO_FLAG = SZ;
+          //lcd_showuint8(30,9,44);
+       }else if(((sensor[ADP2][0]>=120&&sensor[ADP5][0]>=120))&&(sensor[ADPR][0]>=240))     //判环岛 //加入参考电感判环                      //sensor[ADP2][0]>=240&&sensor[ADP5][0]>=160)||(sensor[ADP5][0]>=240&&sensor[ADP2][0]>=160)
+      {
+          SAIDAO_FLAG = HD;
+          if(HD_FLAG == 0){     //只处理一次，后面由HD_HOLD关闭使能
+            //HD_FLAG = 2;         //入环信号  信号在common处重置 但是在进环岛的情况下也有可能被清
+            if(sensor[ADV1][0]>sensor[ADV2][0]){
+              HD_HOLD = 1;
+              //lcd_showuint8(30,9,12);
+            }
+            else if(sensor[ADV1][0]<sensor[ADV2][0]){
+              HD_HOLD = -1;
+              //lcd_showuint8(30,9,22);
+            }
+            else if(sensor[ADP2][0]>sensor[ADP5][0]){
+              HD_HOLD = 1;
+              //lcd_showuint8(30,9,12);
+            }
+            else if(sensor[ADP2][0]<sensor[ADP5][0]){
+              HD_HOLD = -1;
+              //lcd_showuint8(30,9,22);
+            }
+            else{
+              //HD_FLAG --;
+              SAIDAO_FLAG = COMMON;      //若竖直电感无反应则水平循迹
+              //lcd_showuint8(30,9,42);
+            }
+          }else{        //出环不处理
+            SAIDAO_FLAG = COMMON;
+            //lcd_showuint8(30,9,32);
+          }
+       }else if(((sensor[ADV1][0]>30&&sensor[ADV2][0]<20)||(sensor[ADV1][0]<20&&sensor[ADV2][0]>30))){     //直角
+          SAIDAO_FLAG = ZJ;
+          if(sensor[ADV1][0]>30)ZJ_HOLD = 1;
+          else if(sensor[ADV2][0]>30)ZJ_HOLD = -1;
+          //lcd_showuint8(30,9,33);
+       }else if(sensor[ADV1][0]<60&&sensor[ADV2][0]<60&&sensor[ADPR][0]>100&&(sensor[ADP3][0]>20||sensor[ADP4][0]>20)){
+          //if(SAIDAO_FLAG ==ZJ)SAIDAO_FLAG = HD;
+          if(SAIDAO_FLAG ==ZJ)SAIDAO_FLAG = ZJ;         //等直角处理自己释放或时除直角外其他状态更新
+          else{
+            //if((sensor[ADP2][1]>=240||sensor[ADP5][1]>=160)&&HD_FLAG == 1){        //当最终出环岛的时候，重置入环信号
+            //    HD_FLAG = 0;
+            //}
+            SAIDAO_FLAG = COMMON;
+            ZJ_HOLD = 0;
+          }
+          //lcd_showuint8(30,9,0);
+       }
+    }
+    /**************************************************/
+     //舵机打脚输出
+    Servo_PWM_old = Servo_PWM_now;
+    if(SAIDAO_FLAG == STOP){
+      MotorPWM = 0;
+      PWM_Out();
+      //lcd_showuint8(0,9,101);
+      Servo_PWM_now = Servo_PWM_old;
+    }
+    else if(SAIDAO_FLAG == SAIDAO_MAX){
+      if( Servo_PWM_old>SERVO_CENTER){
+           Servo_PWM_now = SERVO_MAX;
+      }
+      else if( Servo_PWM_old<SERVO_CENTER){
+           Servo_PWM_now = SERVO_MIN;
+      }
+    }
+    else if(SAIDAO_FLAG == COMMON){
+      //float servo_pwm_delta = 0;
+      //servo_pwm_delta = Direction_P*(DirectionErr[3][0] - DirectionErr[3][1]) + (DirectionErr[3][2]-2*DirectionErr[3][1]+DirectionErr[3][0])*Direction_D;
+       Servo_PWM_now = SERVO_CENTER - Direction_P*DirectionErr[2][0] - (DirectionErr[2][0]-DirectionErr[2][1])*Direction_D;       //位置式  //暂先通过水平电感做PD
+      //Servo_PWM_now = Servo_PWM_n ow - servo_pwm_delta;
+      //Servo_PWM_now = SERVO_CENTER - Direction_P*DirectionErr[2][0];
+    }
+    else if(SAIDAO_FLAG == HD){
+      if(sensor[ADP2][0]>=200||sensor[ADP5][0]>=140){//观察是否判为HD//if(sensor[ADVR][0]>10){      //竖直电感入环
+        if(HD_HOLD>0){
+            //DirectionErr[1][0]=(mysqrt((float)(sensor[ADVR][0]),0)-my_sqrt((float)(sensor[ADV1][0]),0))/(sensor[ADVR][0] + sensor[ADV1][0]) * 1000;  //竖直减左一
+            Servo_PWM_now = 5900 - Direction_PHD*DirectionErr[2][0] - (DirectionErr[2][0] - DirectionErr[2][1])*Direction_DHD;
+        }
+        else if(HD_HOLD<0){
+            //DirectionErr[1][0]=(my_sqrt((float)(sensor[ADV2][0]),0)-my_sqrt((float)(sensor[ADVR][0]),0))/(sensor[ADV2][0] + sensor[ADVR][0]) * 1000;    //竖直减左二 
+            Servo_PWM_now = SERVO_MAX - Direction_PHD*DirectionErr[2][0] - (DirectionErr[2][0] - DirectionErr[2][1])*Direction_DHD;
+        }
+      }else{
+        HD_HOLD = 0 ;//清HD关闭总使能标志
+      }
+    
+    }
+    else if(SAIDAO_FLAG == MISS){
+      if(ZJ_HOLD!=0){
+        if(ZJ_HOLD == 1)Servo_PWM_now = SERVO_MIN;
+        else Servo_PWM_now = SERVO_MAX;
+      }
+      else if(HD_HOLD!=0){
+        if(HD_HOLD > 0)Servo_PWM_now = SERVO_MIN;
+        else Servo_PWM_now = SERVO_MAX;
+      }
+      else{
+        if( Servo_PWM_old>SERVO_CENTER){
+           Servo_PWM_now = SERVO_MAX;
+        }
+        else if( Servo_PWM_old<SERVO_CENTER){
+           Servo_PWM_now = SERVO_MIN;
+        }
+      }
+    }
+    else if(SAIDAO_FLAG == ZJ){
+      if(ZJ_HOLD == -1)Servo_PWM_now = SERVO_MAX;//- Direction_PZJ*DirectionErr[3][0] - (DirectionErr[3][0]-DirectionErr[3][1])*Direction_DZJ;
+      if(ZJ_HOLD == 1)Servo_PWM_now = SERVO_MIN;//- Direction_PZJ*DirectionErr[3][0] - (DirectionErr[3][0]-DirectionErr[3][1])*Direction_DZJ;
+    }else if(SAIDAO_FLAG == SZ){
+          Servo_PWM_now = SERVO_CENTER - Direction_P*DirectionErr[2][0] - (DirectionErr[2][0]-DirectionErr[2][1])*Direction_D;
+    }
+    if(Servo_PWM_now>SERVO_MAX)Servo_PWM_now = SERVO_MAX;
+    else if(Servo_PWM_now<SERVO_MIN)Servo_PWM_now = SERVO_MIN;
+    Setted_Speed = 340;
+    ServoPWM(Servo_PWM_now);
+}
 
-void Read_ADC(){
+void Read_ADC(){ 
     My_adc_once(ADC_8bit);//采样&&排序(每个电感采集5次)
     //=================中值滤波============================
     for(ADC_e i = ADP1;i < AD_MAX;   i++){//一字电感
@@ -188,5 +397,4 @@ void Read_ADC(){
         //所以要加入死区
         //sensor_p[i] = ad_p[i][0];
     }
-    
 }

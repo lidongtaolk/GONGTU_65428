@@ -2,13 +2,12 @@
 #include "include.h"
 
 //各状态判据在function.h中定义
-extern uint8 var[3]={0};
-
-   int main(){
+ 
+int main(){
    // lcd初始化
    Servo_Init();
-   CSB_Init();
-   //Setted_Speed = 70;
+   CSB_Init1();CSB_Init2();
+   //Setted_Speed = 70; 
    lcd_init();
    Motor_Init();
    Bmq_Init();
@@ -24,6 +23,7 @@ extern uint8 var[3]={0};
    DELAY_MS(10);
    Beep_Off();
    pit_init_ms(PIT0,1);
+   set_vector_handler(PORTC_VECTORn,PORTC_IRQHandler);
    //set_vector_handler(PORTA_VECTORn,PORTA_IRQHandler);
    set_vector_handler(PIT0_VECTORn,PIT0_IRQHandler);
    //set_vector_handler(PIT1_VECTORn,PIT1_IRQHandler);
@@ -31,10 +31,13 @@ extern uint8 var[3]={0};
    NVIC_SetPriorityGrouping((uint32)0x3);
    NVIC_SetPriority(PIT0_IRQn,2); 
    NVIC_SetPriority(PORTB_IRQn,1);
+   NVIC_SetPriority(PORTC_IRQn,1);
    //NVIC_SetPriority(PORTA_IRQn,2);
    //disable_irq(PORTA_IRQn);
    enable_irq(PIT0_IRQn);
    enable_irq(PORTB_IRQn);
+   enable_irq(PORTC_IRQn);
+   my_flash_read1();
    while(1){
    }
 }

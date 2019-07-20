@@ -17,8 +17,8 @@ double Speed_Kp = 0.2,Speed_Ki = 0.02,Speed_Kd = 0;              //速度pid系数
 
 
 void Motor_Init(void){
-    ftm_pwm_init(FTM3,Motor_ftm3_pwm3,500,0);//pwm初始化  频率为500HZ，周期为2us,高电平持续时间为2us*duty*0.01
-    ftm_pwm_init(FTM3,Motor_ftm3_pwm4,500,0);
+    ftm_pwm_init(FTM3,Motor_ftm3_pwm3,14*1000,0);//pwm初始化  频率为500HZ，周期为2us,高电平持续时间为2us*duty*0.01
+    ftm_pwm_init(FTM3,Motor_ftm3_pwm4,14*1000,0);
    
     gpio_init(Motor_EN,GPO,1);//使能端初始化
 }

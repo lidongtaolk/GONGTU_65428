@@ -6,12 +6,14 @@
 ******************************************************/
 
 #include "include.h"
-extern int16 var[3];
+extern int16 var[3] = {0};
 extern uint8 Encode_Switch_Value;
 extern uint16 ad_p[7][6];//一字电感   ad_p[i][0]用存放哨站以及中值滤波后的结果
 extern uint16 ad_v[3][6];//竖直电感   ad_v[i][0]用存放哨站以及中值滤波后的结果
 extern int PITx_Flag = 1;
-float distance = 0;
+//float distance = 0;
+uint8 time = 0;
+uint8 Motor_time = 10;
 uint16 test_servo = SERVO_CENTER;
 uint16 option_key_flash_status = 0;
 
@@ -39,7 +41,7 @@ void PIT0_IRQHandler(void){
   }
   
   if(page_status == M_SUB13){
-    Direction_Control();
+    Direction_Control2();
     for(ADC_e i = ADP1; i <ADV1;i++){           //左侧放水平右侧放竖直
       lcd_showuint8(0,i+1,sensor[i][0]);
     }
@@ -52,13 +54,13 @@ void PIT0_IRQHandler(void){
   
   if(page_status == M_SUB21){    //第二个子菜单的子菜单
     if(((~KEY_ALL)&(1<<KEY_L))&&(option_key_status!=KEY_L)){    //KEY_L增加       // 执行后关闭使能，避免其值快速变化
-       test_servo+=10;
+       test_servo+=100;
        if(test_servo>SERVO_MAX)test_servo=SERVO_MIN;
        ServoPWM(test_servo);
        option_key_status = KEY_L;
     }
     else if(((~KEY_ALL)&(1<<KEY_R))&&(option_key_status!=KEY_R)){       //KEY_R减少       //同上
-       test_servo-=10;
+       test_servo-=100;
        if(test_servo<SERVO_MIN)test_servo=SERVO_MAX;
        ServoPWM(test_servo);
        option_key_status = KEY_R;
@@ -69,7 +71,7 @@ void PIT0_IRQHandler(void){
   }
   
   if(page_status == M_SUB22){
-    Direction_Control();
+    Direction_Control2();
     int32 a = 0;
     for(int i = 0;i<((AD_MAX>>1)-2);i++){ //水平加八字的差比和
       a = (int32)((DirectionErr[i][0])*1000);
@@ -252,9 +254,7 @@ void PIT0_IRQHandler(void){
   }
   
   if(page_status == M_SUB32){
-    var[0]=0;//MotorPWM;
-    var[1]=Bmq_Get();
-    printf("%d\n",var[1]);
+    Direction_Control();
     if(((~KEY_ALL)&(1<<KEY_L))&&(option_key_status!=KEY_L)){    //KEY_L增加       // 执行后关闭使能，避免其值快速变化
        MotorPWM+=10;
        if(MotorPWM>900)MotorPWM=900;
@@ -269,13 +269,21 @@ void PIT0_IRQHandler(void){
     }else if(!((~KEY_ALL)&(1<<KEY_L))&&!((~KEY_ALL)&(1<<KEY_R))&&!((~KEY_ALL)&(1<<KEY_U))&&!((~KEY_ALL)&(1<<KEY_D))){       //总的使能
         option_key_status = KEY_MAX; //表示可以更改
     }
-    if(SAIDAO_FLAG == STOP)MotorPWM = 0;
-    PWM_Out();
+    //if(SAIDAO_FLAG == STOP)MotorPWM = 0;
+    Motor_time++;
+    if(Motor_time >= 10){
+      var[0]=0;//MotorPWM;
+      var[1]=Bmq_Get();
+      //if(var[1] < 300)MotorPWM = 0;
+      //printf("%d\n",var[1]);
+      PWM_Out();
+      time = 0;
+    }
     lcd_showint16(0,1,var[1]);
     lcd_showuint16(60,1,MotorPWM);
-    Direction_Control();
     lcd_showuint16(0,2,Servo_PWM_now);
     lcd_showuint16(0,3,SAIDAO_FLAG);
+    //lcd_showuint16(0,4,sensor[ADPR][0]);
   }
   
   if(page_status == M_SUB41){
@@ -291,40 +299,51 @@ void PIT0_IRQHandler(void){
      lcd_showuint8(0,4,i);lcd_showuint16(30,4,(i+1)<<1);
      
      IIC_write_reg(0x29,0x00,0x01,BMX_SCL_PIN,BMX_SDA_PIN);
-     byte val = 0;
+     uint8 val = 0;
      uint16 cnt = 0;
-     while (cnt < 100) { // 1 second waiting time max
+     while (cnt < 5) { // 1 second waiting time max
       DELAY_MS(10);
       val = IIC_read_reg(0x29,0x00,BMX_SCL_PIN,BMX_SDA_PIN);
       if (val & 0x01) break;
       cnt++;
      }
+     lcd_showuint8(0,5,val);
+     uint8 gbuf[12] = {0};
+     for(int j=0x14;j<(0x14+12);j++){
+      gbuf[j-0x14] = IIC_read_reg(0x29,j,BMX_SCL_PIN,BMX_SDA_PIN);
+     }
+     uint16 acnt = ((gbuf[6] & 0xFF) << 8) | (gbuf[7] & 0xFF);
+     uint16 scnt = ((gbuf[8] & 0xFF) << 8) | (gbuf[9] & 0xFF);
+     uint16 dist = ((gbuf[10] & 0xFF) << 8) | (gbuf[11] & 0xFF);
+      
+     uint8 DeviceRangeStatusInternal = ((gbuf[0]&0x78)>>3);
      
-     
-     
+     lcd_showuint16(0,6,acnt);
+     lcd_showuint16(0,7,scnt);
+     lcd_showuint16(0,8,dist);
+     lcd_showuint8(0,9,DeviceRangeStatusInternal);
   }
   
   if(page_status == M_SUB51){
-    CSB_Send();
-    int32 a = 0;
-    a = (int32)(distance*10);
-    lcd_showfloat(0,1,a);
+    time++;
+    if(time == CSB_TIME){
+      if(CSB_FLAG == CSB1){
+        CSB_Send1();
+        int32 a = 0;
+        a = (int32)(CSB_DISTANCE1*10);
+        lcd_showfloat(0,1,a);
+      }else if(CSB_FLAG == CSB2){
+        CSB_Send2();
+        int32 a = 0;
+        a = (int32)(CSB_DISTANCE2*10);
+        lcd_showfloat(0,2,a);
+      }
+      time = 0;
+    }
   }
   /*Speed_Get_Data();
   Speed_Control();
   Speed_Data_Save();*/
-  //My_adc_once();
- /* Direction_Data_Init();
-  Direction_Control();
-  Speed_Get_Data();
-  Speed_Control();
-  Speed_Data_Save();
-  PWM_Out();*/
-  /*printf("水平电感值：%d,%d,%d,%d,%d\n",sensor_p[1],sensor_p[2],sensor_p[0],sensor_p[3],sensor_p[4]);
-  printf("垂直电感值：%d,%d,%d\n",sensor_v[1],sensor_v[0],sensor_v[2]);
-  printf("差比和结果：%f\n",DirectionErr[0][0]);*/
-  //printf("水平电感值：%d,%d,%d,%d,%d,%d,%d\n",ad_val[0][3],ad_val[1][3],ad_val[2][3],ad_val[3][3],ad_val[4][3],ad_val[5][3],ad_val[6][3]);
-  //printf("垂直电感值：%d,%d,%d\n",ad_val[7][3],ad_val[8][3],ad_val[9][3]);
   if(page_status == M_MAIN){    //主菜单
     
     lcd_changestyle(GREEN,WHITE);
@@ -340,8 +359,17 @@ void PIT0_IRQHandler(void){
 
 void PORTB_IRQHandler(void){
   if(PORTB_ISFR&(1<<8)){
-    CSB_IRQHandler(&distance);
+    CSB_IRQHandler1(&CSB_DISTANCE1);
+    CSB_FLAG = CSB2;    //关闭本超声波使能，开启另一个超声波使能
     PORTB_ISFR = (1<<8);
+  }
+}
+
+void PORTC_IRQHandler(void){
+  if(PORTC_ISFR&(1<<10)){
+    CSB_IRQHandler2(&CSB_DISTANCE2);
+    CSB_FLAG = CSB1;    //关闭本超声波使能，开启另一个超声波使能
+    PORTC_ISFR = (1<<10);
   }
 }
 
@@ -390,4 +418,3 @@ void PORTA_IRQHandler(void){
     PORTA_ISFR = (1<<6);
   }
 }
-  
