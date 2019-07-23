@@ -11,6 +11,7 @@ extern uint8 Encode_Switch_Value;
 extern uint16 ad_p[7][6];//一字电感   ad_p[i][0]用存放哨站以及中值滤波后的结果
 extern uint16 ad_v[3][6];//竖直电感   ad_v[i][0]用存放哨站以及中值滤波后的结果
 extern int PITx_Flag = 1;
+float step = 1.0;
 //float distance = 0;
 uint8 time = 0;
 uint8 Motor_time = 10;
@@ -22,7 +23,18 @@ void PIT0_IRQHandler(void){
   menu_update();      //菜单更新
   Direction_Data_Update();
   //SWJ_sendData((uint8*)var,sizeof(var));
-  if(page_status == M_SUB11){    //第一个子菜单的子菜单
+  
+  if(page_status == M_MAIN){    //主菜单
+    
+    lcd_changestyle(GREEN,WHITE);
+    lcd_showuint8(25,8,key_check(KEY_A));
+    lcd_showuint8(60,8,key_check(KEY_B));
+    lcd_changestyle(RED,WHITE);
+    lcd_showuint8(0,8,Encode_Switch());
+    lcd_showuint16(0,9,KEY_ALL);
+    lcd_showuint16(60,9,KEY_ALL_HOLD);
+  }
+  else if(page_status == M_SUB11){    //第一个子菜单的子菜单
     for(ADC_e i = ADP1; i <ADV1;i++){           //左侧放水平右侧放竖直
       lcd_showuint8(0,i+1,ad_val[i][0]);
     }
@@ -31,7 +43,7 @@ void PIT0_IRQHandler(void){
     }
   }
   
-  if(page_status == M_SUB12){
+  else if(page_status == M_SUB12){
     for(ADC_e i = ADP1; i <ADV1;i++){           //左侧放水平右侧放竖直
       lcd_showuint8(0,i+1,L_Variance1(sensor[i]));
     }
@@ -40,7 +52,7 @@ void PIT0_IRQHandler(void){
     }
   }
   
-  if(page_status == M_SUB13){
+  else if(page_status == M_SUB13){
     Direction_Control2();
     for(ADC_e i = ADP1; i <ADV1;i++){           //左侧放水平右侧放竖直
       lcd_showuint8(0,i+1,sensor[i][0]);
@@ -52,7 +64,7 @@ void PIT0_IRQHandler(void){
     lcd_showuint16(0,8,SAIDAO_FLAG);
   }
   
-  if(page_status == M_SUB21){    //第二个子菜单的子菜单
+  else if(page_status == M_SUB21){    //第二个子菜单的子菜单
     if(((~KEY_ALL)&(1<<KEY_L))&&(option_key_status!=KEY_L)){    //KEY_L增加       // 执行后关闭使能，避免其值快速变化
        test_servo+=100;
        if(test_servo>SERVO_MAX)test_servo=SERVO_MIN;
@@ -70,7 +82,7 @@ void PIT0_IRQHandler(void){
     lcd_showuint16(60,1,test_servo);
   }
   
-  if(page_status == M_SUB22){
+  else if(page_status == M_SUB22){
     Direction_Control2();
     int32 a = 0;
     for(int i = 0;i<((AD_MAX>>1)-2);i++){ //水平加八字的差比和
@@ -87,8 +99,8 @@ void PIT0_IRQHandler(void){
     //printf("%d:%f\n",(AD_MAX>>1)-2,DirectionErr[(AD_MAX>>1)-2][0]);
   }
   
-  if(page_status == M_SUB23){
-     Direction_Control();
+  else if(page_status == M_SUB23){
+     Direction_Control2();
      lcd_showuint16(0,1,Servo_PWM_now);
      lcd_showuint16(0,2,SAIDAO_FLAG);
      int32 a = 0;
@@ -100,7 +112,7 @@ void PIT0_IRQHandler(void){
      lcd_showfloat(0,4,a);
   }
   
-  if(page_status == M_SUB24){
+  else if(page_status == M_SUB24){
     if(((KEY_ALL_HOLD)&(1<<KEY_A))&&((~option_key_flash_status)&(1<<(KEY_A+KEY_MAX))))   //长按A          重置
     {                                        //长按
       my_flash_reset1();
@@ -173,7 +185,7 @@ void PIT0_IRQHandler(void){
     lcd_showfloat(40,DDZJ+1,a);
   }
   
-  if(page_status == M_SUB25){
+  else if(page_status == M_SUB25){
     if(((KEY_ALL_HOLD)&(1<<KEY_A))&&((~option_key_flash_status)&(1<<(KEY_A+KEY_MAX))))   //长按A          重置
     {                                        //长按
       my_flash_reset1();
@@ -230,7 +242,7 @@ void PIT0_IRQHandler(void){
     lcd_showfloat(60,DDHD+1,a);
   }
 
-  if(page_status == M_SUB31){
+  else if(page_status == M_SUB31){
     var[0]=0;//MotorPWM;
     var[1]=Bmq_Get();
     SWJ_sendData((uint8*)var,sizeof(var));
@@ -253,7 +265,7 @@ void PIT0_IRQHandler(void){
     lcd_showuint16(60,1,MotorPWM);
   }
   
-  if(page_status == M_SUB32){
+  else if(page_status == M_SUB32){
     Direction_Control();
     if(((~KEY_ALL)&(1<<KEY_L))&&(option_key_status!=KEY_L)){    //KEY_L增加       // 执行后关闭使能，避免其值快速变化
        MotorPWM+=10;
@@ -269,7 +281,7 @@ void PIT0_IRQHandler(void){
     }else if(!((~KEY_ALL)&(1<<KEY_L))&&!((~KEY_ALL)&(1<<KEY_R))&&!((~KEY_ALL)&(1<<KEY_U))&&!((~KEY_ALL)&(1<<KEY_D))){       //总的使能
         option_key_status = KEY_MAX; //表示可以更改
     }
-    //if(SAIDAO_FLAG == STOP)MotorPWM = 0;
+    if(SAIDAO_FLAG == STOP)MotorPWM = 0;
     Motor_time++;
     if(Motor_time >= 10){
       var[0]=0;//MotorPWM;
@@ -286,7 +298,117 @@ void PIT0_IRQHandler(void){
     //lcd_showuint16(0,4,sensor[ADPR][0]);
   }
   
-  if(page_status == M_SUB41){
+  else if(page_status == M_SUB33){
+    if(((KEY_ALL_HOLD)&(1<<KEY_A))&&((~option_key_flash_status)&(1<<(KEY_A+KEY_MAX))))   //长按A          重置
+    {                                        //长按
+      my_flash_reset2();
+      my_flash_read2();
+      Beep_On();
+      DELAY_MS(10);
+      Beep_Off();
+      option_key_flash_status |= (1<<(KEY_A+KEY_MAX));
+    }else if(((KEY_ALL_HOLD)&(1<<KEY_OK))&&((~option_key_flash_status)&(1<<(KEY_OK+KEY_MAX)))) //长按ok 写入        //将写入操作放在长按，保护rom中的值
+    {  
+       my_flash_write2();               //放在空白处按
+       Beep_On();
+       DELAY_MS(10);
+       Beep_Off();
+       option_key_flash_status |= (1<<(KEY_OK+KEY_MAX));
+    
+    }else if((~(KEY_ALL)&(1<<KEY_OK))&&((~option_key_flash_status)&(1<<(KEY_OK))))             //ok 读取拨码开关
+    {                                       //先判断是否为长按，若是长按则不执行这个
+       if(~(KEY_ALL)&(1<<KEY_1))step = 1;
+       else if(~(KEY_ALL)&(1<<KEY_2))step = 0.1;
+       else if(~(KEY_ALL)&(1<<KEY_3))step = 0.01;//长按
+       else if(~(KEY_ALL)&(1<<KEY_4))step = 0.001;
+       option_key_flash_status |= (1<<(KEY_OK));
+    }else if((~(KEY_ALL)&(1<<KEY_A))&&((~option_key_flash_status)&(1<<(KEY_A))))               //A 读入
+    {                                       //先判断是否为长按，若是长按则不执行这个
+       my_flash_read2();
+       option_key_flash_status |=(1<<(KEY_A));
+    
+    }else if(!((KEY_ALL_HOLD)&(1<<KEY_A))&&!((KEY_ALL_HOLD)&(1<<KEY_OK))&&!(~(KEY_ALL)&(1<<KEY_OK))&&!(~(KEY_ALL)&(1<<KEY_A)))
+    {
+      option_key_flash_status = 0;
+    }
+    /****左右开关更改值***/
+    if(((~KEY_ALL)&(1<<KEY_L))&&(option_key_status!=KEY_L)){    //KEY_L增加       // 执行后关闭使能，避免其值快速变化
+       if(option_status == DP)Speed_Kp += step;
+       else if(option_status == DD)Speed_Kd += step;
+       else if(option_status == DPZJ)Speed_Ki +=step;
+       option_key_status = KEY_L;
+    }
+    else if(((~KEY_ALL)&(1<<KEY_R))&&(option_key_status!=KEY_R)){       //KEY_R减少       //同上
+       if(option_status == DP)Speed_Kp -= step;
+       else if(option_status == DD)Speed_Kd -= step;
+       else if(option_status == DPZJ)Speed_Ki -= step;
+       option_key_status = KEY_R;
+    }else if(!((~KEY_ALL)&(1<<KEY_L))&&!((~KEY_ALL)&(1<<KEY_R))&&!((~KEY_ALL)&(1<<KEY_U))&&!((~KEY_ALL)&(1<<KEY_D))){       //总的使能
+        option_key_status = KEY_MAX; //表示可以更改
+    }
+    
+    uint8 *str1 = "SP:"; 
+    uint8 *str2 = "SD:";
+    uint8 *str3 = "SI:";
+    
+    lcd_showstr(0,1,str1);
+    int32 a = Speed_Kp * 1000;
+    lcd_showfloat(20,DP+1,a);   //放的位置和方向一样
+    
+    lcd_showstr(0,2,str2);
+    a = Speed_Kd * 1000;
+    lcd_showfloat(20,DD+1,a);
+    
+    lcd_showstr(0,3,str3);
+    a = Speed_Ki * 1000;
+    lcd_showfloat(20,DPZJ+1,a);
+    
+    a = step * 1000;
+    lcd_showfloat(0,4,a);
+  }
+  
+  else if(page_status == M_SUB34){
+    Speed_Get_Data();
+    SWJ_sendData((uint8*)GetSpeed,sizeof(GetSpeed));
+    if(((~KEY_ALL)&(1<<KEY_L))&&(option_key_status!=KEY_L)){    //KEY_L增加       // 执行后关闭使能，避免其值快速变化
+       Setted_Speed+=10;
+       if(Setted_Speed>BMQ_MAX)Setted_Speed=BMQ_MAX;
+       if(Setted_Speed<BMQ_MIN)Setted_Speed=BMQ_MIN;
+       option_key_status = KEY_L;
+    }
+    else if(((~KEY_ALL)&(1<<KEY_R))&&(option_key_status!=KEY_R)){       //KEY_R减少       //同上
+       Setted_Speed-=10;
+       if(Setted_Speed>BMQ_MAX)Setted_Speed=BMQ_MAX;
+       if(Setted_Speed<BMQ_MIN)Setted_Speed=BMQ_MIN;
+       option_key_status = KEY_R;
+    }else if(!((~KEY_ALL)&(1<<KEY_L))&&!((~KEY_ALL)&(1<<KEY_R))&&!((~KEY_ALL)&(1<<KEY_U))&&!((~KEY_ALL)&(1<<KEY_D))){       //总的使能
+        option_key_status = KEY_MAX; //表示可以更改
+    }
+    if(Motor_time >= 100){
+      Speed_Control();
+      PWM_Out();
+      Motor_time = 0;
+    }
+    Speed_Data_Save();
+    lcd_showint16(0,1,GetSpeed[0]);
+    lcd_showuint16(60,1,MotorPWM);
+    int32 a = 0;
+    a = Setted_Speed*1000;
+    lcd_showfloat(0,2,a);
+    printf("%d %f\n",GetSpeed[0],Bmq_Bmq(GetSpeed[0]));
+  }
+  
+  else if(page_status == M_SUB35){
+    Speed_Get_Data();
+    Speed_Data_Save();
+    lcd_showint16(0,1,GetSpeed[0]);
+    int32 a = 0;
+    a = Bmq_Bmq(GetSpeed[0])*1000;
+    printf("%d %f\n",GetSpeed[0],Bmq_Bmq(GetSpeed[0]));
+    lcd_showfloat(0,2,a);
+  }
+  
+  else if(page_status == M_SUB41){
      //uint8 i = gpio_get(BMX_SCL_PIN);
      //lcd_showuint8(0,1,i);
      uint8 i = IIC_read_reg(0x29,0xC2,BMX_SCL_PIN,BMX_SDA_PIN);
@@ -324,7 +446,7 @@ void PIT0_IRQHandler(void){
      lcd_showuint8(0,9,DeviceRangeStatusInternal);
   }
   
-  if(page_status == M_SUB51){
+  else if(page_status == M_SUB51){
     time++;
     if(time == CSB_TIME){
       if(CSB_FLAG == CSB1){
@@ -333,27 +455,146 @@ void PIT0_IRQHandler(void){
         a = (int32)(CSB_DISTANCE1*10);
         lcd_showfloat(0,1,a);
       }else if(CSB_FLAG == CSB2){
+        CSB_DataUpdate();
         CSB_Send2();
         int32 a = 0;
         a = (int32)(CSB_DISTANCE2*10);
         lcd_showfloat(0,2,a);
+        a = (int32)(CSB_ERR[0]*10);
+        lcd_showfloat(0,3,a);
+        a = (int32)(my_err(CSB_ERR,CSB_NUM)*10);
+        lcd_showfloat(0,4,a);
+        printf("%f , %f , %f , %f\n",CSB_DISTANCE1,CSB_DISTANCE2,CSB_ERR[0],my_err(CSB_ERR,CSB_NUM));
       }
+      
       time = 0;
     }
   }
-  /*Speed_Get_Data();
-  Speed_Control();
-  Speed_Data_Save();*/
-  if(page_status == M_MAIN){    //主菜单
-    
-    lcd_changestyle(GREEN,WHITE);
-    lcd_showuint8(25,8,key_check(KEY_A));
-    lcd_showuint8(60,8,key_check(KEY_B));
-    lcd_changestyle(RED,WHITE);
-    lcd_showuint8(0,8,Encode_Switch());
-    lcd_showuint16(0,9,KEY_ALL);
-    lcd_showuint16(60,9,KEY_ALL_HOLD);
+  
+  else if(page_status == M_SUB61){              //最终输出
+    Motor_time ++;
+    time++;
+    if(time == CSB_TIME){
+      if(CSB_FLAG == CSB1){
+        CSB_Send1();
+        int32 a = 0;
+        a = (int32)(CSB_DISTANCE1*10);
+        lcd_showfloat(0,8,a);
+      }else if(CSB_FLAG == CSB2){
+        CSB_Send2();
+        int32 a = 0;
+        a = (int32)(CSB_DISTANCE2*10);
+        lcd_showfloat(60,8,a);
+      }
+      time = 0;
+    }
+    CSB_DataUpdate();
+    Speed_Get_Data();
+    Direction_Control();
+    if(SAIDAO_FLAG == STOP){
+      Setted_Speed = 0;
+      MotorPWM = 0;
+    }
+    else if(SAIDAO_FLAG == COMMON)Setted_Speed = COMMON_SPEED;
+    else if(SAIDAO_FLAG == HD)Setted_Speed = HD_SPEED;
+    else if(SAIDAO_FLAG == ZJ)Setted_Speed = ZJ_SPEED;
+    else if(SAIDAO_FLAG == BZ)Setted_Speed = BZ_SPEED;
+    else if(SAIDAO_FLAG == SZ)Setted_Speed = SZ_SPEED;
+    if(Motor_time >=2){
+      if(SAIDAO_FLAG != STOP)Speed_Control();
+      Motor_time = 0;
+    }
+    PWM_Out();
+    Speed_Data_Save();
+    lcd_showint16(0,1,GetSpeed[0]);
+    lcd_showuint16(60,1,MotorPWM);
+    lcd_showuint16(0,2,Setted_Speed);
+    lcd_showuint16(0,3,Servo_PWM_now);
+     lcd_showuint16(60,3,SAIDAO_FLAG);
   }
+  
+  else if(page_status == M_SUB62){
+    if(((KEY_ALL_HOLD)&(1<<KEY_A))&&((~option_key_flash_status)&(1<<(KEY_A+KEY_MAX))))   //长按A          重置
+    {                                        //长按
+      my_flash_reset3();
+      my_flash_read3();
+      Beep_On();
+      DELAY_MS(10);
+      Beep_Off();
+      option_key_flash_status |= (1<<(KEY_A+KEY_MAX));
+    }else if(((KEY_ALL_HOLD)&(1<<KEY_OK))&&((~option_key_flash_status)&(1<<(KEY_OK+KEY_MAX)))) //长按ok 写入        //将写入操作放在长按，保护rom中的值
+    {  
+      my_flash_write3();               //放在空白处按
+       Beep_On();
+       DELAY_MS(10);
+       Beep_Off();
+       option_key_flash_status |= (1<<(KEY_OK+KEY_MAX));
+    
+    }else if((~(KEY_ALL)&(1<<KEY_OK))&&((~option_key_flash_status)&(1<<(KEY_OK))))             //ok 读取拨码开关
+    {                                       //先判断是否为长按，若是长按则不执行这个
+       if(option_status == DP)COMMON_SPEED  = Encode_Switch();
+       else if(option_status == DD)HD_SPEED  = Encode_Switch();
+       else if(option_status == DPZJ)ZJ_SPEED  = Encode_Switch();
+       else if(option_status == DDZJ)BZ_SPEED  = Encode_Switch();
+       else if(option_status == DPHD)SZ_SPEED  = Encode_Switch();
+       option_key_flash_status |= (1<<(KEY_OK));
+    }else if((~(KEY_ALL)&(1<<KEY_A))&&((~option_key_flash_status)&(1<<(KEY_A))))               //A 读入
+    {                                       //先判断是否为长按，若是长按则不执行这个
+       my_flash_read3();
+       option_key_flash_status |=(1<<(KEY_A));
+    
+    }else if(!((KEY_ALL_HOLD)&(1<<KEY_A))&&!((KEY_ALL_HOLD)&(1<<KEY_OK))&&!(~(KEY_ALL)&(1<<KEY_OK))&&!(~(KEY_ALL)&(1<<KEY_A)))
+    {
+      option_key_flash_status = 0;
+    }
+    /****左右开关更改值***/
+    if(((~KEY_ALL)&(1<<KEY_L))&&(option_key_status!=KEY_L)){    //KEY_L增加       // 执行后关闭使能，避免其值快速变化
+       if(option_status == DP)COMMON_SPEED += 10;
+       else if(option_status == DD)HD_SPEED += 10;
+       else if(option_status == DPZJ)ZJ_SPEED +=10;
+       else if(option_status == DDZJ)BZ_SPEED +=10;
+       else if(option_status == DPHD)SZ_SPEED += 10;
+       option_key_status = KEY_L;
+    }
+    else if(((~KEY_ALL)&(1<<KEY_R))&&(option_key_status!=KEY_R)){       //KEY_R减少       //同上
+       if(option_status == DP)COMMON_SPEED -= 10;
+       else if(option_status == DD)HD_SPEED -= 10;
+       else if(option_status == DPZJ)ZJ_SPEED -= 10;
+       else if(option_status == DDZJ)BZ_SPEED -= 10;
+       else if(option_status == DPHD)SZ_SPEED -= 10;
+       option_key_status = KEY_R;
+    }else if(!((~KEY_ALL)&(1<<KEY_L))&&!((~KEY_ALL)&(1<<KEY_R))&&!((~KEY_ALL)&(1<<KEY_U))&&!((~KEY_ALL)&(1<<KEY_D))){       //总的使能
+        option_key_status = KEY_MAX; //表示可以更改
+    }
+    
+    uint8 *str1 = "CS:"; 
+    uint8 *str2 = "HDS:";
+    uint8 *str3 = "ZJS:";
+    uint8 *str4 = "BZS:";
+    uint8 *str5 = "SZS:";
+    
+    lcd_showstr(0,1,str1);
+    int32 a = COMMON_SPEED * 1000;
+    lcd_showfloat(20,DP+1,a);
+    
+    lcd_showstr(0,2,str2);
+    a = HD_SPEED * 1000;
+    lcd_showfloat(20,DD+1,a);
+    
+    lcd_showstr(0,3,str3);
+    a = ZJ_SPEED * 1000;
+    lcd_showfloat(40,DPZJ+1,a);
+    
+    lcd_showstr(0,4,str4);
+    a = BZ_SPEED * 1000;
+    lcd_showfloat(40,DDZJ+1,a);
+    
+    
+    lcd_showstr(0,5,str5);
+    a = SZ_SPEED * 1000;
+    lcd_showfloat(40,DPHD+1,a);
+  }
+  
   PIT_Flag_Clear(PIT0);
 }
 

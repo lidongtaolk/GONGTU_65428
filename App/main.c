@@ -17,6 +17,7 @@ int main(){
    IIC_gpio_init(BMX_SDA_PIN,GPO,1);
    flash_init();        //≥ı ºªØflash
    MotorPWM = 340;
+   Setted_Speed = 200;
    uart_init(UART0,9600);
    menu_init();
    Beep_On();
@@ -38,6 +39,8 @@ int main(){
    enable_irq(PORTB_IRQn);
    enable_irq(PORTC_IRQn);
    my_flash_read1();
+   my_flash_read2();
+   my_flash_read3();
    while(1){
    }
 }

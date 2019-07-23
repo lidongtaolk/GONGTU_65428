@@ -30,6 +30,7 @@ typedef enum{
   SZ,           //十字
   MISS,         //丢线
   STOP,           //停车
+  BZ,              //避障
   SAIDAO_MAX,  //状态个数  
 }SAIDAO_e;
 
@@ -37,6 +38,7 @@ extern SAIDAO_e SAIDAO_FLAG;
 
 //绝对值
 float my_abs(float data);
+float my_err(float *data,uint8 size);
 float my_sqrt(float number,int greater);
 float L_Variance1(uint16 *sensor);
 int L_Variance2(void);   //计算工字电感的方差

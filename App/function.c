@@ -28,6 +28,16 @@ float my_abs(float data){
     return(data>0?data:-1*data);
 }
 
+float my_err(float *data,uint8 size){
+    float max = *data,min = *data;
+    for(uint8 i = 1;i<size;i++){
+      if(data[i]>max)max = data[i];
+      else if(data[i]<min)min = data[i];
+    }
+    float ret = max - min;
+    return ret;
+}
+
 float my_sqrt(float number,int greater){
     float y = number;
     long i;

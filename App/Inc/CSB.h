@@ -14,6 +14,8 @@
 extern float OLD_CSB_DISTANCE1,OLD_CSB_DISTANCE2;
 extern float CSB_DISTANCE1,CSB_DISTANCE2;
 extern float CSB_ERR[CSB_NUM];
+extern uint8 CSB_HOLD;
+
 
 typedef enum{
   CSB1,

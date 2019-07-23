@@ -10,14 +10,14 @@ int option_key_status=0;                //过去的按键状态，用作关闭使能
 OPTION_e  old_option_status =1;         //旧的选项，用来确保刷新一次
 OPTION_e  option_status = 1;            //新的选项
 uint8 *(opt_name[MENU_MAX][OPT_SIZE]) = {
-                                          {"1.adc","2.Servo","3.Motor","4.I2C","5.CSB",""},        //主菜单
+                                          {"1.adc","2.Servo","3.Motor","4.I2C","5.CSB","6.the final"},        //主菜单
                                           
-                                          {"1.value","2.L_V","3.sensor","4.","",""},         //子菜单
+                                          {"1.value","2.L_V","3.sensor","","",""},         //子菜单
                                           {"1.pwm","2.ERROR","3.START","4.DataUpdate","5.HDcanshu",""},
-                                          {"1.PWM","2.START","3.test3","4.","",""},
-                                          {"1.START","2.STOP","","","",""},
-                                          {"1.START","2.STOP","","","",""},
-                                          {"1.START","2.STOP","","","",""},
+                                          {"1.PWM","2.START","3.DataUpdate","4.chuankou","5.BMQ",""},
+                                          {"1.START","","","","",""},
+                                          {"1.START","","","","",""},
+                                          {"1.START!","2.SPEEDDATA","","","",""},
                                           
                                           {"","","","","",""},    //子子菜单
                                           {"","","","","",""},    //子子菜单

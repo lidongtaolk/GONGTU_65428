@@ -9,6 +9,7 @@
 float OLD_CSB_DISTANCE1 = 0,OLD_CSB_DISTANCE2 = 0;
 float CSB_DISTANCE1 = 0,CSB_DISTANCE2 = 0;
 float CSB_ERR[CSB_NUM] = {0};
+uint8 CSB_HOLD =  0;
 
 CSB_e CSB_FLAG = CSB1;
 
@@ -16,11 +17,11 @@ void CSB_DataUpdate(){
   for(uint8 i = CSB_NUM-1;i>0;i--){
     CSB_ERR[i] = CSB_ERR[i-1];  //Êý¾ÝºóÒÆ
   }
-  CSB_ERR[0] = CSB_DISTANCE1 - CSB_DISTANCE2;
+  CSB_ERR[0] = CSB_DISTANCE2 - CSB_DISTANCE1;
 }
 
 void CSB_Control(){
-  //static uint8 CSB_TIME = 0;
+   //static uint8 CSB_TIME = 0;
    
 }
 
